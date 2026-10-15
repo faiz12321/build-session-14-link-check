@@ -1,0 +1,28 @@
+name: test
+on: [push, workflow_dispatch]
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest -v
+      - run: python make_sample.py
+      - name: Reports on the sample files
+        shell: python
+        run: |
+          import subprocess, sys
+          def run(name):
+              return subprocess.run([sys.executable, "linkcheck.py", "sample/" + name], capture_output=True, text=True)
+          good = run("good.html")
+          assert good.returncode == 0 and "No problems found" in good.stdout, good.stdout
+          bad = run("broken.html")
+          assert bad.returncode == 1, bad.stdout
+          for text in ("missing file: 1", "missing place on this page: 1", "empty address: 1", "Repeated id values: 1"):
+              assert text in bad.stdout, (text, bad.stdout)
+          print("Sample page reports checked.")
