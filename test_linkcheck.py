@@ -57,7 +57,7 @@ class CheckTests(unittest.TestCase):
 
     def test_web_and_other_schemes_not_checked(self):
         r = run_on('<a href="http://a.test/">1</a><a href="https://a.test/">2</a>'
-                   '<a href="mailto:a@b.test">3</a><a href="tel:123">4</a>')
+                   '<a href="mailto:help">3</a><a href="tel:123">4</a>')
         self.assertEqual((r["web"], r["other"], r["ok"]), (2, 2, 0))
 
     def test_rooted_and_scheme_relative_paths(self):
