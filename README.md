@@ -1,38 +1,19 @@
-# Check the links in a web page file
+# Check links in a fictional HTML file
 
-A small read-only Python tool built step by step. Give it one HTML file and it lists the links (`<a href>`) it finds and reports links with an empty address, links to a file that is not in the page's folder, links to a `#place` that has no matching `id` on the same page, and `id` values used more than once. It does not use the network and has no code that writes to a file.
+Save three source files in a NEW empty lesson folder.
 
-## Run it
+    python make_sample.py
+    python linkcheck.py sample/broken.html
+    python -m unittest -v
 
-    python make_sample.py                    # makes made-up pages in sample/
-    python linkcheck.py sample/broken.html   # report on one page
-    python -m unittest -v                    # 26 temporary-fixture tests
+Two Windows and two Ubuntu full replays run exact visible source versions. Final 46 small fixture tests pass (two Unix-pipe checks skip on Windows); symlink creation can skip where unavailable. Displayed stdout is first Windows output, not normalized or mixed. Pair differences are unittest time.
+Only link/error changes: final reader refuses input/ancestor symbolic links/reparse points, hardlinks, special files and traversal. Local href targets refuse these aliases and traversal too; metadata or unsupported-target errors return 2 instead of counting aliases found. Ordinary missing targets remain exit-1 reported problems, while existing ordinary directories retain their original found status. Target contents are not read. Setup refuses linked parents/traversal and existing sample paths, without reset or deletion. Naive first version remains fictional-sample-only.
+Original HTML parsing, id matching, classifications, missing-file reports and ordinary-file/folder existence rules remain unchanged. Web, other-scheme and site-root links remain unverified. Exits remain 0 no reported problems, 1 reported problems, 2 read/metadata errors. A pass is not browser rendering, HTML validity, URL safety or website availability proof.
+The checker has no write/move/delete/network code, but reads the whole input into memory. No size/time/resource limit, atomic snapshot or hostile-race defense. Stop editors/sync. Paths, hrefs and ids can be private. Small fictional fixtures are not proof on every filesystem. No desktop Windows/macOS recording. Recorder removes only its own temporary fixture folder. Decisions and feedback are teaching text, not recorded output.
 
-On Windows, if `python` is not found, use `py`.
+MIT code. Python separately licensed/not included.
 
-## Files
+Reference: https://docs.python.org/3/library/os.html
 
-- `linkcheck.py` - the tool
-- `make_sample.py` - makes four made-up pages
-- `test_linkcheck.py` - tests
-
-## Setup safety and evidence
-
-Setup refuses existing sample paths and exclusively writes four fictional HTML files in a new sample folder. It never resets or replaces old data. Start in a new empty lesson folder. Four setup collision/repeat tests preserve nested unrelated bytes and modification times. The checker is unchanged. It reads the complete source file and can follow source links. Relative target paths can leave the page folder; existence probes can follow links and do not prove a target is a regular readable file or a working browser link. Reports expose names and paths. Keep private output private.
-
-Two Windows and two Ubuntu recordings pass all 26 tests. Each platform pair differs only in unittest time. Displays use first Windows output. The recorder writes exact visible first/final file versions in a unique temporary folder and removes only that folder. Setup itself refuses a repeat run. These limited checks do not prove all filesystems or sites.
-
-## Notes
-
-- Web addresses (http and https), other schemes such as `mailto:`, and addresses starting with `/` are counted but not checked. The tool never opens a web address, so it cannot tell you whether one still works.
-- Only `<a href>` is read. Images, scripts, stylesheets and links added by JavaScript are not checked. A `<base>` tag is ignored.
-- A link to a file is checked by asking whether that path exists. The part after `?` or `#` is ignored for that check, so a `#place` inside another page is not checked. Whether capital letters matter in file names can depend on the computer, so a link can be found on one machine and not another.
-- `#place` links are compared with `id` values exactly, capitals included.
-- An `<a>` tag with no `href` is not counted as a link. An `href` that is empty or has no value is reported.
-- Python's HTML parser accepts invalid markup (https://docs.python.org/3/library/html.parser.html), so a page with broken HTML is read without complaint and the tool does not say the HTML is valid.
-- The page must be UTF-8 text. Otherwise the tool says it could not read it.
-- The tool counts every problem but shows only the first five examples of each kind.
-- "No problems found by these checks" only means those checks passed.
-- Tested only on small made-up pages, not on large or real-world sites. Python 3.10 (Linux) and, by GitHub Actions, Python 3.12 on Windows and Ubuntu. Not tested on a Windows 10 or 11 desktop.
-- Educational example, no warranty. Use at your own risk.
-- Code is MIT licensed (see LICENSE). Python is a separate project with its own license; this repository does not include it.
+Windows pair: https://github.com/faiz12321/lesson-lab/actions/runs/38973017224
+Ubuntu pair: https://github.com/faiz12321/lesson-lab/actions/runs/38973096039
