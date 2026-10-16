@@ -6,8 +6,32 @@ Exit code: 0 = no problems found by these checks, 1 = problems, 2 = could not re
 """
 import os
 import sys
+import stat
+from pathlib import Path
 from html.parser import HTMLParser
 from urllib.parse import unquote, urlsplit
+
+def safe_input(value, directory=False):
+    path = Path(value).absolute()
+    if '..' in path.parts:
+        raise OSError('Parent-traversal paths are unsupported.')
+    for part in [*reversed(path.parents), path]:
+        info = part.lstat()
+        if stat.S_ISLNK(info.st_mode) or getattr(info, 'st_file_attributes', 0) & 0x400:
+            raise OSError('Links/reparse points are unsupported.')
+    info = path.lstat()
+    if directory:
+        if not stat.S_ISDIR(info.st_mode):
+            raise NotADirectoryError('Expected an ordinary directory.')
+    elif not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+        raise OSError('Expected an ordinary singly linked file.')
+    return path
+
+
+
+
+
+
 
 SHOW = 5
 
@@ -52,8 +76,22 @@ def classify(href, folder):
     return "file", os.path.join(folder, path)
 
 
+def ordinary_target(value):
+    # Existing ordinary directories keep their original found status; aliases refuse.
+    path = Path(value).absolute()
+    if '..' in path.parts:
+        raise OSError('Parent-traversal targets are unsupported.')
+    for part in [*reversed(path.parents), path]:
+        info = part.lstat()
+        if stat.S_ISLNK(info.st_mode) or getattr(info, 'st_file_attributes', 0) & 0x400:
+            raise OSError('Linked/reparse-point targets are unsupported.')
+    if not stat.S_ISDIR(info.st_mode) and (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1):
+        raise OSError('Expected an ordinary directory or singly linked file.')
+    return True
+
+
 def check(path):
-    with open(path, encoding="utf-8") as f:
+    with open(safe_input(path), encoding="utf-8") as f:
         text = f.read()
     folder = os.path.dirname(os.path.abspath(path))
     parser = Collector()
@@ -73,8 +111,13 @@ def check(path):
             result[kind] += 1
         elif kind == "anchor" and detail not in ids:
             result["anchor_missing"].append((line, "#" + detail))
-        elif kind == "file" and not os.path.exists(detail):
-            result["file_missing"].append((line, os.path.relpath(detail, folder)))
+        elif kind == "file":
+            try:
+                ordinary_target(detail)
+            except FileNotFoundError:
+                result["file_missing"].append((line, os.path.relpath(detail, folder)))
+            else:
+                result["ok"] += 1
         else:
             result["ok"] += 1
     return result
