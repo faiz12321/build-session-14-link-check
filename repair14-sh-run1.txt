@@ -1,0 +1,88 @@
+### CMD: python --version
+Python 3.12.3
+### EXIT: 0
+
+### CMD: python make_sample.py
+Made sample/good.html, broken.html, about.html and my notes.html
+### EXIT: 0
+
+### CMD: python make_sample.py
+Stopped: sample already exists. Nothing was replaced or deleted.
+### EXIT: 1
+
+### CMD: python -c "print(open('sample/broken.html').read())"
+<h1>Shop</h1>
+<a href="about.html">About</a>
+<a href="prices.html">Prices</a>
+<a href="#pricing">Pricing</a>
+<a href="">Empty</a>
+<h2 id="help">Help</h2>
+<h2 id="help">More help</h2>
+
+### EXIT: 0
+
+### CMD: python linkcheck.py sample/broken.html
+about.html
+prices.html
+#pricing
+
+### EXIT: 0
+
+### CMD: python linkcheck.py sample/good.html
+Links found: 4
+Checked and found: 3
+Not checked (web addresses, no network used): 1
+Not checked (other schemes such as mailto:): 0
+Not checked (start with /, depends on the site root): 0
+No problems found by these checks.
+### EXIT: 0
+
+### CMD: python linkcheck.py sample/broken.html
+Links found: 4
+Checked and found: 1
+Not checked (web addresses, no network used): 0
+Not checked (other schemes such as mailto:): 0
+Not checked (start with /, depends on the site root): 0
+Links with an empty address: 1
+  line 5:
+Links to a missing place on this page: 1
+  line 4: #pricing
+Links to a missing file: 1
+  line 3: prices.html
+Repeated id values: 1
+  line 6: help (lines 6, 7)
+### EXIT: 1
+
+### CMD: python -m unittest -v
+test_anchor_found_and_missing (test_linkcheck.CheckTests.test_anchor_found_and_missing) ... ok
+test_anchor_match_is_exact_case (test_linkcheck.CheckTests.test_anchor_match_is_exact_case) ... ok
+test_anchor_tag_without_href_is_not_a_link (test_linkcheck.CheckTests.test_anchor_tag_without_href_is_not_a_link) ... ok
+test_bare_hash_is_fine (test_linkcheck.CheckTests.test_bare_hash_is_fine) ... ok
+test_duplicate_ids_reported_with_lines (test_linkcheck.CheckTests.test_duplicate_ids_reported_with_lines) ... ok
+test_empty_and_valueless_href (test_linkcheck.CheckTests.test_empty_and_valueless_href) ... ok
+test_existing_file_is_found (test_linkcheck.CheckTests.test_existing_file_is_found) ... ok
+test_folder_link_counts_as_found (test_linkcheck.CheckTests.test_folder_link_counts_as_found) ... ok
+test_link_inside_comment_is_ignored (test_linkcheck.CheckTests.test_link_inside_comment_is_ignored) ... ok
+test_missing_file_is_reported_with_line (test_linkcheck.CheckTests.test_missing_file_is_reported_with_line) ... ok
+test_percent_encoded_name (test_linkcheck.CheckTests.test_percent_encoded_name) ... ok
+test_query_and_fragment_ignored_for_file_check (test_linkcheck.CheckTests.test_query_and_fragment_ignored_for_file_check) ... ok
+test_rooted_and_scheme_relative_paths (test_linkcheck.CheckTests.test_rooted_and_scheme_relative_paths) ... ok
+test_uppercase_tag_and_attribute (test_linkcheck.CheckTests.test_uppercase_tag_and_attribute) ... ok
+test_web_and_other_schemes_not_checked (test_linkcheck.CheckTests.test_web_and_other_schemes_not_checked) ... ok
+test_clean_page_exit_zero (test_linkcheck.ReportTests.test_clean_page_exit_zero) ... ok
+test_missing_page_exit_two (test_linkcheck.ReportTests.test_missing_page_exit_two) ... ok
+test_not_utf8_exit_two (test_linkcheck.ReportTests.test_not_utf8_exit_two) ... ok
+test_only_first_five_shown_with_total (test_linkcheck.ReportTests.test_only_first_five_shown_with_total) ... ok
+test_wrong_arguments_exit_two (test_linkcheck.ReportTests.test_wrong_arguments_exit_two) ... ok
+test_checking_does_not_change_the_file (test_linkcheck.SampleTests.test_checking_does_not_change_the_file) ... ok
+test_sample_files_report_as_described (test_linkcheck.SampleTests.test_sample_files_report_as_described) ... ok
+test_cli_refuses_without_replacing (test_linkcheck.SetupSafetyTests.test_cli_refuses_without_replacing) ... ok
+test_existing_file_preserved (test_linkcheck.SetupSafetyTests.test_existing_file_preserved) ... ok
+test_existing_folder_preserves_nested_bytes_and_metadata (test_linkcheck.SetupSafetyTests.test_existing_folder_preserves_nested_bytes_and_metadata) ... ok
+test_repeat_setup_preserves_generated_bytes_and_metadata (test_linkcheck.SetupSafetyTests.test_repeat_setup_preserves_generated_bytes_and_metadata) ... ok
+
+----------------------------------------------------------------------
+Ran 26 tests in 0.035s
+
+OK
+### EXIT: 0
