@@ -1,3 +1,4 @@
+from unittest import mock
 import io
 import os
 import tempfile
@@ -187,6 +188,100 @@ class SetupSafetyTests(unittest.TestCase):
         self.assertEqual(keep.read_bytes(),b'KEEP')
 
 
+
+
+class PathSafety(unittest.TestCase):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
+        self.base=Path(self.tmp.name);self.root=self.base/'sample'
+        make_sample.make(self.root);self.file=self.root/'good.html'
+    def link(self,path,target,directory=False):
+        try:path.symlink_to(target,target_is_directory=directory)
+        except OSError:self.skipTest('Symlink creation unavailable')
+    def code(self,path):
+        with redirect_stdout(io.StringIO()) as out:code=linkcheck.main(['linkcheck.py',str(path)])
+        return code,out.getvalue()
+    def test_file_link_refuses(self):
+        p=self.base/'linked';self.link(p,self.file)
+        with self.assertRaises(OSError):linkcheck.safe_input(p)
+        self.assertEqual(self.code(p)[0],2)
+    def test_linked_ancestor_refuses(self):
+        p=self.base/'linked';self.link(p,self.root,True)
+        self.assertEqual(self.code(p/'good.html')[0],2)
+    def test_dangling_link_refuses(self):
+        p=self.base/'linked';self.link(p,self.base/'missing')
+        self.assertEqual(self.code(p)[0],2)
+    def test_self_loop_refuses(self):
+        p=self.base/'linked';self.link(p,p)
+        self.assertEqual(self.code(p)[0],2)
+    def test_hardlink_refuses(self):
+        p=self.base/'hard';os.link(self.file,p)
+        self.assertEqual(self.code(p)[0],2)
+    def test_pipe_refuses_without_blocking(self):
+        if not hasattr(os,'mkfifo'):self.skipTest('Unix pipe unavailable')
+        p=self.base/'pipe';os.mkfifo(p)
+        self.assertEqual(self.code(p)[0],2)
+    def test_directory_refuses(self):self.assertEqual(self.code(self.root)[0],2)
+    def test_traversal_refuses(self):self.assertEqual(self.code(self.root/'..'/'sample'/'good.html')[0],2)
+    def test_reparse_attribute_refuses(self):
+        real=Path.lstat;target=self.file
+        def fake(path,*args,**kwargs):
+            value=real(path,*args,**kwargs)
+            if path==target:return type('Reparse',(),{'st_mode':value.st_mode,'st_file_attributes':0x400})()
+            return value
+        with mock.patch.object(Path,'lstat',fake):self.assertEqual(self.code(self.file)[0],2)
+    def test_metadata_failure_nonzero(self):
+        with mock.patch.object(Path,'lstat',side_effect=OSError('forced metadata error')):
+            code,text=self.code(self.file);self.assertEqual(code,2);self.assertIn('forced metadata error',text)
+    def test_setup_linked_parent_refuses(self):
+        p=self.base/'linked';self.link(p,self.root,True)
+        with self.assertRaises(OSError):make_sample.make(p/'new')
+        self.assertFalse((self.root/'new').exists())
+    def test_setup_traversal_refuses(self):
+        with self.assertRaises(OSError):make_sample.make(self.root/'..'/'new')
+
+
+
+class TargetSafety(unittest.TestCase):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
+        self.root=Path(self.tmp.name);self.page=self.root/'page.html';self.target=self.root/'target'
+    def code(self,href):
+        self.page.write_text('<a href="'+href+'">x</a>')
+        with redirect_stdout(io.StringIO()):return linkcheck.main(['p',str(self.page)])
+    def test_target_symlink_refuses(self):
+        self.target.write_text('x');p=self.root/'link'
+        try:p.symlink_to(self.target)
+        except OSError:self.skipTest('Symlinks unavailable')
+        self.assertEqual(self.code('link'),2)
+    def test_target_dangling_refuses(self):
+        p=self.root/'link'
+        try:p.symlink_to(self.target)
+        except OSError:self.skipTest('Symlinks unavailable')
+        self.assertEqual(self.code('link'),2)
+    def test_target_self_loop_refuses(self):
+        p=self.root/'link'
+        try:p.symlink_to(p)
+        except OSError:self.skipTest('Symlinks unavailable')
+        self.assertEqual(self.code('link'),2)
+    def test_target_ancestor_alias_refuses(self):
+        self.target.mkdir();p=self.root/'alias'
+        try:p.symlink_to(self.target,target_is_directory=True)
+        except OSError:self.skipTest('Symlinks unavailable')
+        self.assertEqual(self.code('alias/'),2)
+    def test_target_hardlink_refuses(self):
+        self.target.write_text('x');os.link(self.target,self.root/'hard')
+        self.assertEqual(self.code('hard'),2)
+    def test_target_pipe_refuses(self):
+        if not hasattr(os,'mkfifo'):self.skipTest('Unix pipe unavailable')
+        os.mkfifo(self.target);self.assertEqual(self.code('target'),2)
+    def test_target_traversal_refuses(self):self.assertEqual(self.code('../target'),2)
+    def test_target_metadata_error_refuses(self):
+        real=Path.lstat
+        def fake(p,*a,**kw):
+            if p==self.target:raise OSError('forced')
+            return real(p,*a,**kw)
+        with mock.patch.object(Path,'lstat',fake):self.assertEqual(self.code('target'),2)
 
 
 if __name__ == "__main__":
