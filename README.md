@@ -6,7 +6,7 @@ A small read-only Python tool built step by step. Give it one HTML file and it l
 
     python make_sample.py                    # makes made-up pages in sample/
     python linkcheck.py sample/broken.html   # report on one page
-    python -m unittest -v                    # twenty-two automated tests
+    python -m unittest -v                    # 26 temporary-fixture tests
 
 On Windows, if `python` is not found, use `py`.
 
@@ -15,6 +15,12 @@ On Windows, if `python` is not found, use `py`.
 - `linkcheck.py` - the tool
 - `make_sample.py` - makes four made-up pages
 - `test_linkcheck.py` - tests
+
+## Setup safety and evidence
+
+Setup refuses existing sample paths and exclusively writes four fictional HTML files in a new sample folder. It never resets or replaces old data. Start in a new empty lesson folder. Four setup collision/repeat tests preserve nested unrelated bytes and modification times. The checker is unchanged. It reads the complete source file and can follow source links. Relative target paths can leave the page folder; existence probes can follow links and do not prove a target is a regular readable file or a working browser link. Reports expose names and paths. Keep private output private.
+
+Two Windows and two Ubuntu recordings pass all 26 tests. Each platform pair differs only in unittest time. Displays use first Windows output. The recorder writes exact visible first/final file versions in a unique temporary folder and removes only that folder. Setup itself refuses a repeat run. These limited checks do not prove all filesystems or sites.
 
 ## Notes
 
